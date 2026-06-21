@@ -9,6 +9,11 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
+-- Variables for cheats
+_G.AutoKill = false; _G.ESP = false; _G.Hitbox = false; _G.Aimbot = false
+
+local OwnerDisplayName = "Owner:REAL_SITOMAN"
+
 local function ShowIntro()
     local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
     local Frame = Instance.new("Frame", ScreenGui)
@@ -29,12 +34,20 @@ end
 
 local function CreateMainUI()
     ShowIntro()
-    _G.AutoKill = false; _G.ESP = false; _G.Hitbox = false; _G.Aimbot = false
     local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
     local Frame = Instance.new("Frame", ScreenGui)
-    Frame.Size = UDim2.new(0, 260, 0, 360); Frame.Position = UDim2.new(0.5, -130, 0.5, -180)
+    Frame.Size = UDim2.new(0, 260, 0, 420); Frame.Position = UDim2.new(0.5, -130, 0.5, -210)
     Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Frame.Active = true; Frame.Draggable = true
     Instance.new("UICorner", Frame)
+    
+    local UserImg = Instance.new("ImageLabel", Frame)
+    UserImg.Size = UDim2.new(0, 40, 0, 40); UserImg.Position = UDim2.new(0.05, 0, 0.03, 0)
+    UserImg.Image = Players:GetUserThumbnailAsync(OwnerID, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+    Instance.new("UICorner", UserImg)
+    
+    local UserLabel = Instance.new("TextLabel", Frame)
+    UserLabel.Size = UDim2.new(0, 150, 0, 40); UserLabel.Position = UDim2.new(0.25, 0, 0.03, 0)
+    UserLabel.BackgroundTransparency = 1; UserLabel.Text = OwnerDisplayName; UserLabel.TextColor3 = Color3.new(1,1,1); UserLabel.TextXAlignment = Enum.TextXAlignment.Left
     
     local StatusBox = Instance.new("TextButton", ScreenGui)
     StatusBox.Size = UDim2.new(0, 50, 0, 50); StatusBox.Position = UDim2.new(0, 20, 0.5, -25)
@@ -42,26 +55,24 @@ local function CreateMainUI()
     Instance.new("UICorner", StatusBox)
 
     local Title = Instance.new("TextLabel", Frame)
-    Title.Name = "Title"; Title.Size = UDim2.new(1, 0, 0, 50); Title.Text = "  SITOMAN HUB V2"
+    Title.Name = "Title"; Title.Size = UDim2.new(1, 0, 0, 50); Title.Position = UDim2.new(0, 0, 0.12, 0)
+    Title.Text = "  SITOMAN HUB V2"
     Title.TextColor3 = Color3.new(1, 1, 1); Title.TextSize = 14; Title.Font = Enum.Font.GothamBold
     Title.TextXAlignment = Enum.TextXAlignment.Left; Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40); Instance.new("UICorner", Title)
     
     local ExitBtn = Instance.new("TextButton", Title); ExitBtn.Size = UDim2.new(0, 50, 1, 0); ExitBtn.Position = UDim2.new(0.8, 0, 0, 0); ExitBtn.Text = "X"
     ExitBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50); ExitBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
     
-    local isMinimized = false
     StatusBox.MouseButton1Click:Connect(function()
-        isMinimized = not isMinimized
-        for _, obj in pairs(Frame:GetChildren()) do if obj:IsA("TextButton") and obj.Name ~= "Title" then obj.Visible = not isMinimized end end
-        Frame.Size = isMinimized and UDim2.new(0, 260, 0, 50) or UDim2.new(0, 260, 0, 360)
-        StatusBox.BackgroundColor3 = isMinimized and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
-        StatusBox.Text = isMinimized and "CLOSED" or "OPEN"
+        Frame.Visible = not Frame.Visible
+        StatusBox.Text = Frame.Visible and "OPEN" or "CLOSED"
+        StatusBox.BackgroundColor3 = Frame.Visible and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
     end)
     
     local buttonCount = 0
     local function CreateButton(name, var)
-        local btn = Instance.new("TextButton", Frame); btn.Size = UDim2.new(0.9, 0, 0, 50); btn.Position = UDim2.new(0.05, 0, 0, 60 + (buttonCount * 65))
-        btn.Name = name; btn.Text = name .. ": OFF"; btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); btn.TextColor3 = Color3.new(1,1,1); btn.Font = Enum.Font.GothamBold
+        local btn = Instance.new("TextButton", Frame); btn.Size = UDim2.new(0.9, 0, 0, 50); btn.Position = UDim2.new(0.05, 0, 0, 120 + (buttonCount * 65))
+        btn.Text = name .. ": OFF"; btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50); btn.TextColor3 = Color3.new(1,1,1); btn.Font = Enum.Font.GothamBold
         Instance.new("UICorner", btn)
         btn.MouseButton1Click:Connect(function()
             _G[var] = not _G[var]
@@ -71,56 +82,57 @@ local function CreateMainUI()
         buttonCount = buttonCount + 1
     end
     CreateButton("Auto-Kill", "AutoKill"); CreateButton("ESP", "ESP"); CreateButton("Hitbox", "Hitbox"); CreateButton("Aimbot", "Aimbot")
-    
-    RunService.Heartbeat:Connect(function()
-        if _G.AutoKill then
-            local myChar = LocalPlayer.Character
-            if myChar and myChar:FindFirstChild("HumanoidRootPart") then
-                local closest = nil; local dist = math.huge
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 and (p.Team ~= LocalPlayer.Team or not p.Team) then
-                        local d = (p.Character.HumanoidRootPart.Position - myChar.HumanoidRootPart.Position).Magnitude
-                        if d < dist then closest = p.Character.HumanoidRootPart; dist = d end
-                    end
-                end
-                if closest then
-                    for _, p in pairs(myChar:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
-                    myChar.HumanoidRootPart.Velocity = (closest.Position - myChar.HumanoidRootPart.Position).Unit * 50
-                end
-            end
-        end
-        if _G.ESP then
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("HighlightESP") then
-                    local hl = Instance.new("Highlight", p.Character); hl.Name = "HighlightESP"; hl.FillColor = Color3.fromRGB(255, 0, 0)
-                end
-            end
-        else
-            for _, p in pairs(Players:GetPlayers()) do if p.Character and p.Character:FindFirstChild("HighlightESP") then p.Character.HighlightESP:Destroy() end end
-        end
-        if _G.Hitbox then
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and (p.Team ~= LocalPlayer.Team or not p.Team) then
-                    p.Character.HumanoidRootPart.Size = Vector3.new(6, 6, 6)
-                    p.Character.HumanoidRootPart.Transparency = 0.5
-                end
-            end
-        end
-        if _G.Aimbot then
+end
+
+-- HEARTBEAT LOOP (Di luar fungsi UI supaya sentiasa running)
+RunService.Heartbeat:Connect(function()
+    if _G.AutoKill then
+        local myChar = LocalPlayer.Character
+        if myChar and myChar:FindFirstChild("HumanoidRootPart") then
             local closest = nil; local dist = math.huge
             for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
-                    local pos, vis = Camera:WorldToViewportPoint(p.Character.Head.Position)
-                    if vis then
-                        local d = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
-                        if d < dist then closest = p.Character.Head; dist = d end
-                    end
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                    local d = (p.Character.HumanoidRootPart.Position - myChar.HumanoidRootPart.Position).Magnitude
+                    if d < dist then closest = p.Character.HumanoidRootPart; dist = d end
                 end
             end
-            if closest then Camera.CFrame = CFrame.new(Camera.CFrame.Position, closest.Position) end
+            if closest then
+                for _, p in pairs(myChar:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
+                myChar.HumanoidRootPart.Velocity = (closest.Position - myChar.HumanoidRootPart.Position).Unit * 50
+            end
         end
-    end)
-end
+    end
+    if _G.ESP then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("HighlightESP") then
+                local hl = Instance.new("Highlight", p.Character); hl.Name = "HighlightESP"; hl.FillColor = Color3.fromRGB(255, 0, 0)
+            end
+        end
+    else
+        for _, p in pairs(Players:GetPlayers()) do if p.Character and p.Character:FindFirstChild("HighlightESP") then p.Character.HighlightESP:Destroy() end end
+    end
+    if _G.Hitbox then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                p.Character.HumanoidRootPart.Size = Vector3.new(6, 6, 6)
+                p.Character.HumanoidRootPart.Transparency = 0.5
+            end
+        end
+    end
+    if _G.Aimbot then
+        local closest = nil; local dist = math.huge
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                local pos, vis = Camera:WorldToViewportPoint(p.Character.Head.Position)
+                if vis then
+                    local d = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                    if d < dist then closest = p.Character.Head; dist = d end
+                end
+            end
+        end
+        if closest then Camera.CFrame = CFrame.new(Camera.CFrame.Position, closest.Position) end
+    end
+end)
 
 if key_system and LocalPlayer.UserId ~= OwnerID then
     local KeyGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
